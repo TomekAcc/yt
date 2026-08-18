@@ -78,6 +78,23 @@ Provider choice lives in `config/settings.yaml` (`providers.llm`,
 `providers.image`, `providers.tts`) — set the matching key(s) in `.env`.
 At minimum you need `ANTHROPIC_API_KEY` (every content stage uses it).
 
+Image generation defaults to **Gemini 2.5 Flash Image** (`providers.image:
+gemini`). Get a free `GEMINI_API_KEY`:
+
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+   and sign in with a Google account (no separate Cloud project or billing
+   setup needed to start).
+2. Click **Create API key** (it provisions a backing project for you
+   automatically).
+3. Copy the key into `.env` as `GEMINI_API_KEY=...`.
+
+The free tier is rate-limited (whitepaper numbers move around, currently
+on the order of 10 requests/minute, ~250/day) — plenty for iterating on one
+video at a time; add billing on the Google Cloud project AI Studio created
+if you need higher throughput. To use OpenAI or Stability images instead,
+set `providers.image` to `openai`/`stability` and `providers.image_model`
+to match (`gpt-image-1` has no Stability equivalent field).
+
 For YouTube upload: create an OAuth client ID (Desktop app) in Google Cloud
 Console with the YouTube Data API v3 enabled, download the client secret
 JSON, and point `YOUTUBE_CLIENT_SECRETS_FILE` at it. The first upload opens

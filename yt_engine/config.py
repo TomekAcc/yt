@@ -34,6 +34,7 @@ class Secrets(BaseSettings):
     anthropic_api_key: str | None = Field(default=None)
     openai_api_key: str | None = Field(default=None)
     stability_api_key: str | None = Field(default=None)
+    gemini_api_key: str | None = Field(default=None)
     elevenlabs_api_key: str | None = Field(default=None)
     tavily_api_key: str | None = Field(default=None)
 
@@ -44,8 +45,8 @@ class Secrets(BaseSettings):
 class ProviderConfig(BaseSettings):
     llm: Literal["anthropic"] = "anthropic"
     llm_model: str = "claude-sonnet-4-5"
-    image: Literal["openai", "stability"] = "openai"
-    image_model: str = "gpt-image-1"
+    image: Literal["openai", "stability", "gemini"] = "gemini"
+    image_model: str = "gemini-2.5-flash-image"
     tts: Literal["elevenlabs", "openai"] = "elevenlabs"
     tts_voice: str = "narrator"
 

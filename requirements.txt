@@ -10,7 +10,8 @@ anthropic>=0.34,<1
 tavily-python>=0.5,<1 # optional: only needed if TAVILY_API_KEY is set
 
 # Image / TTS providers
-openai>=1.40,<2 # OpenAI images and/or TTS
+google-genai>=2.0,<3 # Gemini image generation (default image provider)
+openai>=1.40,<2 # OpenAI images and/or TTS, if switched on in config/settings.yaml
 
 # Media assembly
 moviepy>=2.1,<3

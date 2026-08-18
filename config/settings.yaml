@@ -11,8 +11,10 @@ channel:
 providers:
   llm: "anthropic"
   llm_model: "claude-sonnet-4-5"
-  image: "openai"
-  image_model: "gpt-image-1"
+  # image: one of "gemini" | "openai" | "stability" -- image_model must match
+  # whichever is active (gemini-2.5-flash-image / gpt-image-1 / n/a).
+  image: "gemini"
+  image_model: "gemini-2.5-flash-image"
   tts: "elevenlabs"
   tts_voice: "narrator"
 
