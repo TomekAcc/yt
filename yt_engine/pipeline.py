@@ -196,7 +196,7 @@ class Pipeline:
         provider = build_tts_provider(self.settings)
         project_dir = self.store.project_dir(state.project_id)
         for scene in state.script.scenes:
-            out_path = project_dir / "audio" / f"scene_{scene.index:03d}.mp3"
+            out_path = project_dir / "audio" / f"scene_{scene.index:03d}.{provider.file_extension}"
             result = provider.synthesize(scene.narration, out_path)
             scene.audio_path = result.audio_path
             if result.word_timings:

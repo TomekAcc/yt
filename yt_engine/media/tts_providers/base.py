@@ -17,6 +17,11 @@ class TTSResult:
 
 
 class TTSProvider(ABC):
+    # Container format this provider writes -- callers (pipeline.py) name
+    # the output file with this extension since providers differ (e.g.
+    # Gemini returns raw PCM wrapped as .wav; ElevenLabs/OpenAI return .mp3).
+    file_extension: str = "mp3"
+
     @abstractmethod
     def synthesize(self, text: str, out_path: Path) -> TTSResult:
         ...

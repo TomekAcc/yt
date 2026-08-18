@@ -47,7 +47,7 @@ class ProviderConfig(BaseSettings):
     llm_model: str = "claude-sonnet-4-5"
     image: Literal["openai", "stability", "gemini"] = "gemini"
     image_model: str = "gemini-2.5-flash-image"
-    tts: Literal["elevenlabs", "openai"] = "elevenlabs"
+    tts: Literal["elevenlabs", "gemini", "openai"] = "elevenlabs"
     tts_voice: str = "narrator"
 
 

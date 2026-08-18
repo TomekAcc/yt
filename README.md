@@ -95,6 +95,24 @@ if you need higher throughput. To use OpenAI or Stability images instead,
 set `providers.image` to `openai`/`stability` and `providers.image_model`
 to match (`gpt-image-1` has no Stability equivalent field).
 
+### Narration provider and commercial-use licensing
+
+`providers.tts` supports three options, and their licensing terms differ in
+a way that matters once you plan to monetize:
+
+| Provider | Voice quality | Native subtitle timestamps | Free tier usable for a monetized channel? |
+|---|---|---|---|
+| `elevenlabs` (default) | Best -- most natural documentary read | Yes (`with-timestamps` endpoint) | **No.** ElevenLabs' free plan ToS explicitly forbids commercial use and requires "elevenlabs.io" attribution if you publish anything made with it. Needs at least the Starter paid plan before a monetized upload. |
+| `gemini` | Very good, expressive, 30+ voices | No (falls back to local whisper alignment) | **Yes.** Same `GEMINI_API_KEY` as image generation -- no separate signup. Google's Gemini API free tier does not prohibit commercial use of output (unlike ElevenLabs); the only catch is Google may use free-tier prompts/output to improve their models, and the free tier isn't available to API clients serving users in the EEA/UK/Switzerland. |
+| `openai` | Good | No (falls back to local whisper alignment) | **Yes, immediately.** The `/v1/audio/speech` API (what this provider calls) is pay-as-you-go from the first request with standard commercial output-ownership terms -- no separate "free vs. paid license" tier to worry about. (This is different from ChatGPT's conversational Voice Mode, which *is* non-commercial -- the API endpoint isn't that.) |
+
+Practical read: if you want the single highest voice quality, keep
+`elevenlabs` but budget for its paid plan before publishing anything
+monetized -- testing with a `private` upload on the free plan is fine.
+If you'd rather start monetizing immediately without a second
+subscription, `gemini` (reusing your image key) or `openai` are the
+commercially-safe choices from day one, at a modest quality tradeoff.
+
 For YouTube upload: create an OAuth client ID (Desktop app) in Google Cloud
 Console with the YouTube Data API v3 enabled, download the client secret
 JSON, and point `YOUTUBE_CLIENT_SECRETS_FILE` at it. The first upload opens
