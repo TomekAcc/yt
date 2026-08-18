@@ -1,0 +1,31 @@
+# Locked visual identity for "The Ledger". Injected into every image-prompt
+# the script writer produces (see yt_engine/content/script_writer.py) so
+# every video shares one recognizable art direction -- the channel's
+# competitive advantage over generic-stock-photo faceless competitors
+# (STRATEGY.md §2, §4).
+
+art_style: >
+  Painterly cinematic realism, reminiscent of restrained oil-on-canvas
+  editorial illustration. Rich but desaturated color grading. Dramatic,
+  directional lighting (chiaroscuro-influenced). No cartoon or anime
+  styling.
+
+palette_by_era:
+  pre_1900: "sepia, candlelight amber, aged parchment tones"
+  1900_1950: "muted browns and grays, newsprint contrast, soft film grain"
+  1950_1990: "desaturated technicolor, warm office-beige and brass tones"
+  1990_2010: "cool fluorescent office light, CRT-monitor blue-green tint"
+  2010_present: "clean cool corporate blues and glass/steel tones"
+
+composition_rules:
+  - "16:9 frame, no on-image text or numerals (rendered separately as subtitles)"
+  - "leave visually quiet space in the lower third for burned-in captions"
+  - "favor wide establishing shots and symbolic close-ups (ledgers, coins, skylines, telegrams, stock tickers) over literal portraits of named individuals"
+  - "avoid modern photorealistic depictions of real, identifiable living people"
+
+recurring_motifs:
+  - "a hand-drawn ledger line / chart wipe used as a transition motif"
+  - "consistent title card typography across all videos"
+
+negative_prompts:
+  - "no text, no watermark, no logo, no distorted hands, no modern anachronisms unless intentional"

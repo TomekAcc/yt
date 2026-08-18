@@ -1,0 +1,102 @@
+"""Stage 4: compliance review.
+
+Runs the automated checks from STRATEGY.md §5 against a finished script,
+then — by default — blocks the pipeline on a human approval gate before any
+money is spent on image/voice generation. This module is the pipeline's
+concrete answer to YouTube's 2026 "inauthentic content" policy: it turns
+"original value" from a vibe into checks that either pass or don't.
+"""
+from __future__ import annotations
+
+from ..models import ComplianceCheck, ComplianceReport, ResearchBrief, Script
+
+MIN_SOURCES = 2
+MIN_KEY_FACTS = 5
+MIN_THESIS_WORDS = 8
+
+
+class ComplianceReviewer:
+    def review(
+        self,
+        script: Script,
+        research: ResearchBrief,
+        *,
+        recent_sub_formats: list[str] | None = None,
+    ) -> ComplianceReport:
+        checks = [
+            _check_multi_sourced(research),
+            _check_thesis_present(research),
+            _check_key_facts(research),
+            _check_scene_variety(script),
+            _check_disclaimer(script),
+            _check_format_rotation(script, recent_sub_formats or []),
+        ]
+        return ComplianceReport(checks=checks, reviewed_by_human=False, approved=False)
+
+    def approve(self, report: ComplianceReport, *, human_reviewed: bool) -> ComplianceReport:
+        """Grant final approval. Only call this after either a human has
+        actually looked at the script (``human_reviewed=True``), or the
+        channel config explicitly disables the human gate."""
+        report.reviewed_by_human = human_reviewed
+        report.approved = report.all_automated_checks_passed
+        return report
+
+
+def _check_multi_sourced(research: ResearchBrief) -> ComplianceCheck:
+    n = len({s.url or s.title for s in research.sources})
+    return ComplianceCheck(
+        name="multi_sourced",
+        passed=n >= MIN_SOURCES,
+        detail=f"{n} distinct source(s), need >= {MIN_SOURCES}",
+    )
+
+
+def _check_thesis_present(research: ResearchBrief) -> ComplianceCheck:
+    words = len(research.thesis.split())
+    return ComplianceCheck(
+        name="thesis_present",
+        passed=words >= MIN_THESIS_WORDS,
+        detail=f"thesis is {words} words, need >= {MIN_THESIS_WORDS}",
+    )
+
+
+def _check_key_facts(research: ResearchBrief) -> ComplianceCheck:
+    n = len(research.key_facts)
+    return ComplianceCheck(
+        name="sufficient_research_depth",
+        passed=n >= MIN_KEY_FACTS,
+        detail=f"{n} key facts recorded, need >= {MIN_KEY_FACTS}",
+    )
+
+
+def _check_scene_variety(script: Script) -> ComplianceCheck:
+    """Flags scripts where every scene is (near-)identical length, a
+    fingerprint of templated, not-actually-written content."""
+    lengths = [len(s.narration.split()) for s in script.scenes]
+    if len(lengths) < 2:
+        return ComplianceCheck(name="scene_variety", passed=False, detail="fewer than 2 scenes")
+    unique_lengths = len(set(lengths))
+    passed = unique_lengths >= max(2, len(lengths) // 4)
+    return ComplianceCheck(
+        name="scene_variety",
+        passed=passed,
+        detail=f"{unique_lengths} distinct scene lengths across {len(lengths)} scenes",
+    )
+
+
+def _check_disclaimer(script: Script) -> ComplianceCheck:
+    return ComplianceCheck(
+        name="disclosure_text_present",
+        passed=bool(script.disclaimer and len(script.disclaimer) > 10),
+        detail="AI-use disclaimer text is set for the description",
+    )
+
+
+def _check_format_rotation(script: Script, recent_sub_formats: list[str]) -> ComplianceCheck:
+    last_three = recent_sub_formats[-3:]
+    repeated = last_three.count(script.sub_format.value) >= 3
+    return ComplianceCheck(
+        name="format_rotation",
+        passed=not repeated,
+        detail=f"sub_format={script.sub_format.value}, last 3 uploads={last_three}",
+    )
