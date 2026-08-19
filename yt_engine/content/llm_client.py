@@ -113,12 +113,20 @@ class LLMClient:
             raise ProviderError(f"Gemini returned no text; response: {response!r}")
         return response.text.strip()
 
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=20),
+        retry=retry_if_exception_type(ProviderError),
+    )
     def complete_json(
         self, system: str, prompt: str, *, max_tokens: int = 4096
     ) -> dict[str, Any] | list[Any]:
         """Call the model and parse its reply as JSON, tolerating minor
         formatting drift (code fences, leading prose) by extracting the
-        first ``{...}`` / ``[...]`` block."""
+        first ``{...}`` / ``[...]`` block. Retries on malformed JSON too --
+        a truncated or broken response is usually a one-off sampling issue,
+        not a persistent failure."""
         text = self.complete_text(
             system=system + "\n\nRespond with ONLY valid JSON. No prose, no markdown fences.",
             prompt=prompt,
@@ -130,4 +138,10 @@ class LLMClient:
             match = _JSON_BLOCK_RE.search(text)
             if not match:
                 raise ProviderError(f"LLM did not return parseable JSON: {text[:500]!r}")
-            return json.loads(match.group(0))
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError as exc:
+                raise ProviderError(
+                    f"LLM returned malformed JSON ({exc}); response was {len(text)} chars, "
+                    f"likely truncated by max_tokens={max_tokens}"
+                ) from exc
