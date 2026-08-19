@@ -1,8 +1,10 @@
-"""Thin wrapper around the Anthropic Messages API used by every content
-stage (ideation, research synthesis, script writing, metadata copy).
+"""Wrapper around the content-generation LLM used by every content stage
+(ideation, research synthesis, script writing, metadata copy).
 
 Centralizing it here means retries, JSON-extraction, and model selection are
-defined once instead of duplicated per stage.
+defined once instead of duplicated per stage. Supports Anthropic (default)
+or Gemini, chosen via ``providers.llm`` in ``config/settings.yaml`` -- pick
+Gemini if you'd rather use one API key across scripting, images, and voice.
 """
 from __future__ import annotations
 
@@ -22,17 +24,24 @@ _JSON_BLOCK_RE = re.compile(r"\{.*\}|\[.*\]", re.DOTALL)
 
 
 class LLMClient:
-    """Provider-agnostic chat/JSON completion client.
-
-    Only Anthropic is wired up today (``providers.llm: anthropic`` in
-    ``config/settings.yaml``); the constructor is the single seam to add
-    another provider (OpenAI, etc.) without touching every stage that calls
-    :meth:`complete_json`.
-    """
+    """Provider-agnostic chat/JSON completion client used by every content
+    stage. The constructor is the single seam for adding another provider
+    without touching every stage that calls :meth:`complete_json`."""
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        api_key = settings.secrets.anthropic_api_key
+        self._provider = settings.providers.llm
+        self._model = settings.providers.llm_model
+
+        if self._provider == "anthropic":
+            self._init_anthropic()
+        elif self._provider == "gemini":
+            self._init_gemini()
+        else:
+            raise ConfigurationError(f"Unknown LLM provider: {self._provider!r}")
+
+    def _init_anthropic(self) -> None:
+        api_key = self.settings.secrets.anthropic_api_key
         if not api_key:
             raise ConfigurationError(
                 "ANTHROPIC_API_KEY is not set. Add it to your .env file "
@@ -44,9 +53,20 @@ class LLMClient:
             raise ConfigurationError(
                 "The 'anthropic' package is required. Run: pip install anthropic"
             ) from exc
-
         self._client = anthropic.Anthropic(api_key=api_key)
-        self._model = settings.providers.llm_model
+
+    def _init_gemini(self) -> None:
+        api_key = self.settings.secrets.gemini_api_key
+        if not api_key:
+            raise ConfigurationError(
+                "GEMINI_API_KEY is not set. Add it to your .env file "
+                "(see .env.example)."
+            )
+        try:
+            from google import genai
+        except ImportError as exc:  # pragma: no cover
+            raise ConfigurationError("pip install google-genai to use the Gemini LLM provider") from exc
+        self._client = genai.Client(api_key=api_key)
 
     @retry(
         reraise=True,
@@ -55,6 +75,11 @@ class LLMClient:
         retry=retry_if_exception_type(ProviderError),
     )
     def complete_text(self, system: str, prompt: str, *, max_tokens: int = 4096) -> str:
+        if self._provider == "anthropic":
+            return self._complete_text_anthropic(system, prompt, max_tokens)
+        return self._complete_text_gemini(system, prompt, max_tokens)
+
+    def _complete_text_anthropic(self, system: str, prompt: str, max_tokens: int) -> str:
         try:
             response = self._client.messages.create(
                 model=self._model,
@@ -68,6 +93,25 @@ class LLMClient:
         return "".join(
             block.text for block in response.content if getattr(block, "type", None) == "text"
         ).strip()
+
+    def _complete_text_gemini(self, system: str, prompt: str, max_tokens: int) -> str:
+        from google.genai import types
+
+        try:
+            response = self._client.models.generate_content(
+                model=self._model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    max_output_tokens=max_tokens,
+                ),
+            )
+        except Exception as exc:  # noqa: BLE001
+            raise ProviderError(f"Gemini request failed: {exc}") from exc
+
+        if not response.text:
+            raise ProviderError(f"Gemini returned no text; response: {response!r}")
+        return response.text.strip()
 
     def complete_json(
         self, system: str, prompt: str, *, max_tokens: int = 4096

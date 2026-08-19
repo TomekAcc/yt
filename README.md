@@ -75,11 +75,9 @@ cp .env.example .env   # fill in the keys for the providers you're using
 ```
 
 Provider choice lives in `config/settings.yaml` (`providers.llm`,
-`providers.image`, `providers.tts`) — set the matching key(s) in `.env`.
-At minimum you need `ANTHROPIC_API_KEY` (every content stage uses it).
-
-Image generation defaults to **Gemini 2.5 Flash Image** (`providers.image:
-gemini`). Get a free `GEMINI_API_KEY`:
+`providers.image`, `providers.tts`). By default all three are set to
+`gemini`, so **one `GEMINI_API_KEY` is all you need** to run the whole
+pipeline (scripting, images, and narration) end to end:
 
 1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
    and sign in with a Google account (no separate Cloud project or billing
@@ -91,9 +89,12 @@ gemini`). Get a free `GEMINI_API_KEY`:
 The free tier is rate-limited (whitepaper numbers move around, currently
 on the order of 10 requests/minute, ~250/day) — plenty for iterating on one
 video at a time; add billing on the Google Cloud project AI Studio created
-if you need higher throughput. To use OpenAI or Stability images instead,
-set `providers.image` to `openai`/`stability` and `providers.image_model`
-to match (`gpt-image-1` has no Stability equivalent field).
+if you need higher throughput.
+
+Each stage can independently be switched to a different provider if you
+want to (e.g. Anthropic for scripting, ElevenLabs for narration — see the
+comments in `config/settings.yaml`), by setting that provider's option and
+adding its matching key to `.env`. Nothing else needs to change.
 
 ### Narration provider and commercial-use licensing
 
@@ -102,16 +103,15 @@ a way that matters once you plan to monetize:
 
 | Provider | Voice quality | Native subtitle timestamps | Free tier usable for a monetized channel? |
 |---|---|---|---|
-| `elevenlabs` (default) | Best -- most natural documentary read | Yes (`with-timestamps` endpoint) | **No.** ElevenLabs' free plan ToS explicitly forbids commercial use and requires "elevenlabs.io" attribution if you publish anything made with it. Needs at least the Starter paid plan before a monetized upload. |
-| `gemini` | Very good, expressive, 30+ voices | No (falls back to local whisper alignment) | **Yes.** Same `GEMINI_API_KEY` as image generation -- no separate signup. Google's Gemini API free tier does not prohibit commercial use of output (unlike ElevenLabs); the only catch is Google may use free-tier prompts/output to improve their models, and the free tier isn't available to API clients serving users in the EEA/UK/Switzerland. |
+| `gemini` (default) | Very good, expressive, 30+ voices | No (falls back to local whisper alignment) | **Yes.** Same `GEMINI_API_KEY` as everything else -- no separate signup. Google's Gemini API free tier does not prohibit commercial use of output; the only catch is Google may use free-tier prompts/output to improve their models, and the free tier isn't available to API clients serving users in the EEA/UK/Switzerland. |
+| `elevenlabs` | Best -- most natural documentary read | Yes (`with-timestamps` endpoint) | **No.** ElevenLabs' free plan ToS explicitly forbids commercial use and requires "elevenlabs.io" attribution if you publish anything made with it. Needs at least the Starter paid plan before a monetized upload. |
 | `openai` | Good | No (falls back to local whisper alignment) | **Yes, immediately.** The `/v1/audio/speech` API (what this provider calls) is pay-as-you-go from the first request with standard commercial output-ownership terms -- no separate "free vs. paid license" tier to worry about. (This is different from ChatGPT's conversational Voice Mode, which *is* non-commercial -- the API endpoint isn't that.) |
 
-Practical read: if you want the single highest voice quality, keep
-`elevenlabs` but budget for its paid plan before publishing anything
-monetized -- testing with a `private` upload on the free plan is fine.
-If you'd rather start monetizing immediately without a second
-subscription, `gemini` (reusing your image key) or `openai` are the
-commercially-safe choices from day one, at a modest quality tradeoff.
+Practical read: the default (`gemini`) needs no second subscription and is
+safe to monetize on the free tier. If you want the single highest voice
+quality and don't mind a second signup, switch to `elevenlabs` -- but
+budget for its paid plan before publishing anything monetized (testing
+with a `private` upload on its free plan is fine).
 
 For YouTube upload: create an OAuth client ID (Desktop app) in Google Cloud
 Console with the YouTube Data API v3 enabled, download the client secret

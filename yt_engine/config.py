@@ -43,7 +43,7 @@ class Secrets(BaseSettings):
 
 
 class ProviderConfig(BaseSettings):
-    llm: Literal["anthropic"] = "anthropic"
+    llm: Literal["anthropic", "gemini"] = "anthropic"
     llm_model: str = "claude-sonnet-4-5"
     image: Literal["openai", "stability", "gemini"] = "gemini"
     image_model: str = "gemini-2.5-flash-image"

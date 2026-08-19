@@ -9,17 +9,19 @@ channel:
   default_privacy_status: "private" # a human reviews + publishes from YouTube Studio
 
 providers:
-  llm: "anthropic"
-  llm_model: "claude-sonnet-4-5"
+  # llm: one of "anthropic" | "gemini" -- gemini reuses the same
+  # GEMINI_API_KEY as images/voice below, so only one key is needed overall.
+  llm: "gemini"
+  llm_model: "gemini-2.5-flash"
   # image: one of "gemini" | "openai" | "stability" -- image_model must match
   # whichever is active (gemini-2.5-flash-image / gpt-image-1 / n/a).
   image: "gemini"
   image_model: "gemini-2.5-flash-image"
   # tts: one of "elevenlabs" | "gemini" | "openai" -- elevenlabs gives the
-  # richest voice quality and native word-timestamps (best subtitle sync);
-  # gemini reuses the same GEMINI_API_KEY as images and has no free-tier
-  # commercial-use restriction; openai is the cheapest pay-as-you-go option.
-  tts: "elevenlabs"
+  # richest voice quality and native word-timestamps (best subtitle sync)
+  # but its free tier forbids commercial/monetized use; gemini reuses the
+  # same GEMINI_API_KEY as above with no such restriction.
+  tts: "gemini"
   tts_voice: "narrator"
 
 video:
