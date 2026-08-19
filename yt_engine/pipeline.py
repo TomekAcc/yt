@@ -158,6 +158,7 @@ class Pipeline:
             target_minutes=(lo + hi) / 2,
             scene_seconds=self.settings.video.scene_max_duration_sec,
             style_guide=style_guide,
+            content_rules=self.settings.load_content_rules(),
         )
 
     def _handle_compliance(self, state: ProjectState, approval_callback: ApprovalCallback | None) -> bool:
