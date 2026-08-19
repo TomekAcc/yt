@@ -12,17 +12,20 @@ providers:
   # llm: one of "anthropic" | "gemini" -- gemini reuses the same
   # GEMINI_API_KEY as images/voice below, so only one key is needed overall.
   llm: "gemini"
-  llm_model: "gemini-2.5-flash"
+  llm_model: "gemini-3.6-flash"
   # image: one of "gemini" | "openai" | "stability" -- image_model must match
-  # whichever is active (gemini-2.5-flash-image / gpt-image-1 / n/a).
+  # whichever is active (gemini-3.1-flash-image / gpt-image-1 / n/a).
+  # Gemini's model names change fairly often -- if this starts 404ing,
+  # check https://ai.google.dev/gemini-api/docs/models for the current name.
   image: "gemini"
-  image_model: "gemini-2.5-flash-image"
+  image_model: "gemini-3.1-flash-image"
   # tts: one of "elevenlabs" | "gemini" | "openai" -- elevenlabs gives the
   # richest voice quality and native word-timestamps (best subtitle sync)
   # but its free tier forbids commercial/monetized use; gemini reuses the
   # same GEMINI_API_KEY as above with no such restriction.
   tts: "gemini"
   tts_voice: "narrator"
+  tts_model: "gemini-3.1-flash-tts-preview"
 
 video:
   target_minutes: [10.0, 18.0]
