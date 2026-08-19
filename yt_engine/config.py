@@ -56,11 +56,19 @@ class VideoConfig(BaseSettings):
     target_minutes: tuple[float, float] = (10.0, 18.0)
     resolution: tuple[int, int] = (1920, 1080)
     fps: int = 30
-    ken_burns_zoom_range: tuple[float, float] = (1.0, 1.06)
+    # How much each image visibly zooms over its on-screen duration -- higher
+    # = more noticeable motion, so a still image doesn't feel static.
+    ken_burns_zoom_range: tuple[float, float] = (1.0, 1.15)
     scene_min_duration_sec: float = 6.0
-    scene_max_duration_sec: float = 14.0
+    # How long a single image is held on screen (also used as the target
+    # pacing for how much narration/how many words go into each scene when
+    # the script is written) -- lower = images change more often.
+    scene_max_duration_sec: float = 12.0
     subtitle_font: str = "Arial"
     subtitle_max_chars_per_line: int = 42
+    # Distance of the caption text from the bottom edge, in pixels at 1080p.
+    # Lower = closer to the bottom of the frame.
+    subtitle_margin_v: int = 40
 
 
 class ChannelConfig(BaseSettings):
