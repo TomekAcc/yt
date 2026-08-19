@@ -153,14 +153,14 @@ def assemble_video(script: Script, out_path: Path, *, video_config: VideoConfig)
 
 
 def burn_subtitles(
-    video_path: Path, srt_path: Path, out_path: Path, *, font: str = "Arial"
+    video_path: Path, srt_path: Path, out_path: Path, *, font: str = "Arial", margin_v: int = 40
 ) -> Path:
     import imageio_ffmpeg
 
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     style = (
         f"FontName={font},FontSize=20,PrimaryColour=&H00FFFFFF,"
-        "OutlineColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV=60"
+        f"OutlineColour=&H80000000,BorderStyle=3,Outline=1,Shadow=0,MarginV={margin_v}"
     )
     # ffmpeg's filtergraph parser treats ':' and other punctuation as
     # argument separators, so the path needs escaping when passed inside a
@@ -198,5 +198,8 @@ def render(script: Script, project_dir: Path, video_config: VideoConfig) -> Path
     build_srt(
         script.scenes, offsets, srt_path, max_chars_per_line=video_config.subtitle_max_chars_per_line
     )
-    burn_subtitles(raw_path, srt_path, final_path, font=video_config.subtitle_font)
+    burn_subtitles(
+        raw_path, srt_path, final_path,
+        font=video_config.subtitle_font, margin_v=video_config.subtitle_margin_v,
+    )
     return final_path

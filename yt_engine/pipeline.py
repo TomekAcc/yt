@@ -156,6 +156,7 @@ class Pipeline:
         state.script = self.script_writer.write(
             state.research,
             target_minutes=(lo + hi) / 2,
+            scene_seconds=self.settings.video.scene_max_duration_sec,
             style_guide=style_guide,
         )
 
