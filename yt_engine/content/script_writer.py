@@ -58,7 +58,7 @@ class ScriptWriter:
         brief: ResearchBrief,
         *,
         target_minutes: float = 12.0,
-        scene_seconds: float = 10.0,
+        scene_seconds: float = 18.0,
         style_guide: dict | None = None,
     ) -> Script:
         target_words = int(target_minutes * WORDS_PER_MINUTE)
@@ -79,7 +79,7 @@ class ScriptWriter:
                 timeline="\n".join(f"- {t}" for t in brief.timeline) or "(none given)",
                 style_guide=style_text,
             ),
-            max_tokens=8192,
+            max_tokens=32768,
         )
 
         scenes = [
