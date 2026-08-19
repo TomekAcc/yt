@@ -49,6 +49,7 @@ class ProviderConfig(BaseSettings):
     image_model: str = "gemini-2.5-flash-image"
     tts: Literal["elevenlabs", "gemini", "openai"] = "elevenlabs"
     tts_voice: str = "narrator"
+    tts_model: str = "gemini-3.1-flash-tts-preview"
 
 
 class VideoConfig(BaseSettings):

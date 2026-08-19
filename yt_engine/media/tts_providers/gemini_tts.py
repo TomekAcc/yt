@@ -28,7 +28,7 @@ class GeminiTTSProvider(TTSProvider):
 
     file_extension = "wav"
 
-    def __init__(self, api_key: str, voice: str = "narrator", model: str = "gemini-2.5-flash-tts") -> None:
+    def __init__(self, api_key: str, voice: str = "narrator", model: str = "gemini-3.1-flash-tts-preview") -> None:
         if not api_key:
             raise ConfigurationError("GEMINI_API_KEY is not set for the TTS provider.")
         try:

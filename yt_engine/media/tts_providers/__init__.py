@@ -21,7 +21,7 @@ def build_tts_provider(settings: Settings) -> TTSProvider:
     if provider == "elevenlabs":
         return ElevenLabsTTSProvider(settings.secrets.elevenlabs_api_key, voice=voice)
     if provider == "gemini":
-        return GeminiTTSProvider(settings.secrets.gemini_api_key, voice=voice)
+        return GeminiTTSProvider(settings.secrets.gemini_api_key, voice=voice, model=settings.providers.tts_model)
     if provider == "openai":
-        return OpenAITTSProvider(settings.secrets.openai_api_key, voice=voice)
+        return OpenAITTSProvider(settings.secrets.openai_api_key, voice=voice, model=settings.providers.tts_model)
     raise ConfigurationError(f"Unknown TTS provider: {provider!r}")
