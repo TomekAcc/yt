@@ -53,6 +53,36 @@ def test_research_agent_merges_search_and_llm_sources():
     assert len(brief.key_facts) == 6
 
 
+def test_script_writer_injects_content_rules_into_system_prompt():
+    topic = TopicIdea(
+        title="The Fall of Barings Bank", sub_format=SubFormat.COMPANY_CASE_STUDY,
+        logline="l", era_or_setting="1995", hook="h",
+    )
+    brief = ResearchBrief(
+        topic=topic, thesis="t", key_facts=["a"], sources=[Source(title="s")],
+    )
+    llm = FakeLLMClient(
+        responses=[{"scenes": [{"narration": "n", "image_prompt": "p"}]}]
+    )
+    ScriptWriter(llm).write(brief, content_rules="RULE: never invent a fact, always be entertaining.")
+    assert "RULE: never invent a fact" in llm.calls[0]["system"]
+
+
+def test_script_writer_falls_back_when_no_content_rules_given():
+    topic = TopicIdea(
+        title="The Fall of Barings Bank", sub_format=SubFormat.COMPANY_CASE_STUDY,
+        logline="l", era_or_setting="1995", hook="h",
+    )
+    brief = ResearchBrief(
+        topic=topic, thesis="t", key_facts=["a"], sources=[Source(title="s")],
+    )
+    llm = FakeLLMClient(
+        responses=[{"scenes": [{"narration": "n", "image_prompt": "p"}]}]
+    )
+    ScriptWriter(llm).write(brief, content_rules=None)
+    assert "FACTUALLY ACCURATE" in llm.calls[0]["system"]
+
+
 def test_script_writer_builds_scenes_from_brief():
     topic = TopicIdea(
         title="The Fall of Barings Bank", sub_format=SubFormat.COMPANY_CASE_STUDY,

@@ -75,6 +75,7 @@ class ChannelConfig(BaseSettings):
     name: str = "The Ledger"
     niche: str = "financial_history"
     style_guide: str = "config/style_guides/financial_history.yaml"
+    content_rules: str = "config/content_rules.md"
     require_human_approval: bool = True
     default_privacy_status: Literal["private", "unlisted", "public"] = "private"
 
@@ -109,3 +110,14 @@ class Settings(BaseSettings):
         if not path.exists():
             return {}
         return yaml.safe_load(path.read_text()) or {}
+
+    def content_rules_path(self) -> Path:
+        return REPO_ROOT / self.channel.content_rules
+
+    def load_content_rules(self) -> str:
+        """Loads config/content_rules.md verbatim -- edit that file to
+        change how scripts get written, no code changes needed."""
+        path = self.content_rules_path()
+        if not path.exists():
+            return ""
+        return path.read_text()

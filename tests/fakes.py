@@ -14,8 +14,10 @@ from yt_engine.models import UploadResult, WordTiming, YouTubeMetadata
 class FakeLLMClient:
     def __init__(self, responses: list):
         self._responses = list(responses)
+        self.calls: list[dict] = []
 
     def complete_json(self, system: str, prompt: str, *, max_tokens: int = 4096):
+        self.calls.append({"system": system, "prompt": prompt, "max_tokens": max_tokens})
         if not self._responses:
             raise AssertionError("FakeLLMClient ran out of queued responses")
         return self._responses.pop(0)
