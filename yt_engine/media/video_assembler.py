@@ -9,6 +9,7 @@ compositing.
 from __future__ import annotations
 
 import itertools
+import os
 import subprocess
 from pathlib import Path
 
@@ -86,8 +87,13 @@ def make_ken_burns_clip(
         y0 = (max_dy / 2) + dy_dir * (max_dy / 2) * (2 * progress - 1)
         x0 = min(max(x0, 0.0), max_dx)
         y0 = min(max(y0, 0.0), max_dy)
+        # BICUBIC rather than LANCZOS: this crop+resize runs once per output
+        # frame (tens of thousands of times for a full-length video), and
+        # LANCZOS's extra sharpness is imperceptible on a panning/zooming
+        # shot that YouTube re-encodes on upload anyway -- BICUBIC renders
+        # several times faster for the same visual result here.
         crop = base_img.crop((x0, y0, x0 + crop_w, y0 + crop_h)).resize(
-            (target_w, target_h), Image.LANCZOS
+            (target_w, target_h), Image.BICUBIC
         )
         return np.asarray(crop)
 
@@ -143,8 +149,18 @@ def assemble_video(script: Script, out_path: Path, *, video_config: VideoConfig)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     log.info("Rendering %d scenes (%.1fs) -> %s", len(script.scenes), video.duration, out_path)
+    # "veryfast" trades a little compression efficiency for a large encode
+    # speedup -- irrelevant here since YouTube re-encodes on upload anyway.
+    # threads=cpu_count lets libx264 actually use every core instead of
+    # defaulting to one.
     video.write_videofile(
-        str(out_path), fps=video_config.fps, codec="libx264", audio_codec="aac", logger=None
+        str(out_path),
+        fps=video_config.fps,
+        codec="libx264",
+        audio_codec="aac",
+        preset="veryfast",
+        threads=os.cpu_count() or 4,
+        logger=None,
     )
 
     for clip in (*video_clips, *audio_clips, video, narration):
