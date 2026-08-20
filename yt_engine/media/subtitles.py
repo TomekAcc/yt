@@ -8,6 +8,7 @@ actual voiceover instead of an estimated words-per-minute guess.
 """
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
@@ -15,6 +16,13 @@ from ..models import Scene, WordTiming
 from ..logging_utils import get_logger
 
 log = get_logger(__name__)
+
+# Whisper occasionally emits a "word" for a non-speech sound (a music note
+# for a tonal glitch, a stray punctuation mark for a pause) instead of
+# actual spoken text. Anything with no letters or digits at all isn't a
+# real word and would show up in captions as a stray symbol, so it's
+# dropped rather than passed through to the SRT.
+_HAS_ALPHANUMERIC = re.compile(r"[A-Za-z0-9]")
 
 _whisper_model = None  # lazy-loaded singleton; forced alignment is only needed for non-timestamped TTS
 
@@ -34,7 +42,10 @@ def align_words_with_whisper(audio_path: Path) -> list[WordTiming]:
     words: list[WordTiming] = []
     for segment in segments:
         for w in segment.words or []:
-            words.append(WordTiming(word=w.word.strip(), start_sec=w.start, end_sec=w.end))
+            text = w.word.strip()
+            if not text or not _HAS_ALPHANUMERIC.search(text):
+                continue
+            words.append(WordTiming(word=text, start_sec=w.start, end_sec=w.end))
     return words
 
 
