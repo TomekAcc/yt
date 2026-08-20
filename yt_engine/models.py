@@ -184,10 +184,15 @@ class ProjectState(BaseModel):
         self.updated_at = _now()
 
     def mark_failed(self, message: str) -> None:
-        self.stage = Stage.FAILED
+        """Records the failure but deliberately leaves ``stage`` alone --
+        it still points at the stage that was being attempted, so the next
+        ``pipeline.run()`` call retries that same stage instead of getting
+        stuck (overwriting it with a terminal FAILED value used to make
+        every retry a silent no-op)."""
         self.error = message
         self.touch()
 
     def advance(self) -> None:
         self.stage = self.stage.next()
+        self.error = None
         self.touch()

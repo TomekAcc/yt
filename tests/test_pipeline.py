@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import pytest
+
 import yt_engine.pipeline as pipeline_module
 from tests.fakes import FakeImageProvider, FakeLLMClient, FakeTTSProvider, FakeUploader
+from yt_engine.exceptions import PipelineError
 from yt_engine.models import Stage, SubFormat, TopicIdea
 from yt_engine.pipeline import Pipeline
 
@@ -100,3 +103,44 @@ def test_pipeline_resumes_from_saved_state_without_repeating_llm_calls(tiny_sett
 
     assert resumed.stage == Stage.DONE
     assert resumed.script.title == state.script.title
+
+
+def test_pipeline_retries_a_failed_stage_instead_of_silently_no_oping(tiny_settings, monkeypatch):
+    """Regression test: a stage failure (e.g. a bad API key) must leave the
+    project retryable. It previously overwrote state.stage with a terminal
+    FAILED marker, so calling run() again matched the "already terminal"
+    loop condition and returned immediately without retrying anything --
+    silently, with no error and no progress."""
+    monkeypatch.setattr(pipeline_module, "build_image_provider", lambda settings: FakeImageProvider())
+
+    class _BrokenTTSProvider:
+        file_extension = "mp3"
+
+        def synthesize(self, text, out_path):
+            raise RuntimeError("invalid_api_key")
+
+    monkeypatch.setattr(pipeline_module, "build_tts_provider", lambda settings: _BrokenTTSProvider())
+
+    pipeline = Pipeline(tiny_settings)
+    pipeline.llm = FakeLLMClient([RESEARCH_RESPONSE, SCRIPT_RESPONSE])
+    state = pipeline.create_project(TOPIC)
+    state = pipeline.run(state)  # blocks at compliance
+    pipeline.approve(state, approved=True)
+
+    with pytest.raises(PipelineError):
+        pipeline.run(state)  # fails inside narration (bad "key")
+
+    reloaded = pipeline.store.load(state.project_id)
+    assert reloaded.stage == Stage.NARRATION  # NOT overwritten to a dead FAILED state
+    assert reloaded.error is not None
+
+    # "Fix the key" (swap in a working provider) and retry -- this must
+    # actually attempt narration again, not no-op. Also needs a fresh LLM
+    # queue for the still-ahead metadata stage's call.
+    monkeypatch.setattr(pipeline_module, "build_tts_provider", lambda settings: FakeTTSProvider())
+    pipeline.llm = FakeLLMClient([METADATA_RESPONSE])
+    pipeline.uploader = FakeUploader()
+    finished = pipeline.run(reloaded)
+
+    assert finished.stage == Stage.DONE
+    assert finished.error is None
