@@ -220,7 +220,8 @@ class Pipeline:
         thumb_path = project_dir / "thumbnail.jpg"
         first_scene = state.script.scenes[0]
         if first_scene.image_path:
-            thumbnail.build_thumbnail(Path(first_scene.image_path), state.script.title, thumb_path)
+            overlay_text = metadata.thumbnail_text or state.script.title
+            thumbnail.build_thumbnail(Path(first_scene.image_path), overlay_text, thumb_path)
             metadata.thumbnail_path = thumb_path
         state.metadata = metadata
 

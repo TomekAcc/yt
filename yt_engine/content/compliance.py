@@ -18,6 +18,16 @@ MIN_THESIS_WORDS = 8
 MIN_DISTINCT_SCENE_LENGTHS = 5
 MAX_DOMINANT_SCENE_LENGTH_SHARE = 0.5
 
+# Phrases that turn a documentary into personalized financial advice --
+# the exact category STRATEGY.md flags as a monetization risk (YouTube
+# scrutinizes "synthetic personas covering sensitive topics like finance"
+# more heavily when they read as advice rather than analysis).
+ADVICE_LANGUAGE_PATTERNS = [
+    "you should invest", "you should buy", "you should sell",
+    "guaranteed return", "guaranteed profit", "risk-free investment",
+    "buy now", "invest now", "act now before",
+]
+
 
 class ComplianceReviewer:
     def review(
@@ -34,6 +44,7 @@ class ComplianceReviewer:
             _check_scene_variety(script),
             _check_disclaimer(script),
             _check_format_rotation(script, recent_sub_formats or []),
+            _check_no_advice_language(script),
         ]
         return ComplianceReport(checks=checks, reviewed_by_human=False, approved=False)
 
@@ -108,6 +119,20 @@ def _check_disclaimer(script: Script) -> ComplianceCheck:
         name="disclosure_text_present",
         passed=bool(script.disclaimer and len(script.disclaimer) > 10),
         detail="AI-use disclaimer text is set for the description",
+    )
+
+
+def _check_no_advice_language(script: Script) -> ComplianceCheck:
+    """This is a documentary/analysis channel, not a personalized-advice
+    channel -- see STRATEGY.md §5. Flags narration that crosses into
+    directive financial advice ("you should buy...") rather than
+    historical analysis."""
+    narration = script.full_narration.lower()
+    hits = [p for p in ADVICE_LANGUAGE_PATTERNS if p in narration]
+    return ComplianceCheck(
+        name="no_advice_language",
+        passed=not hits,
+        detail="no advice-style phrasing found" if not hits else f"found: {', '.join(hits)}",
     )
 
 

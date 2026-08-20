@@ -39,6 +39,14 @@ seconds if bored.
 - When a fact is disputed or uncertain in the historical record, say so
   ("some accounts say...") rather than presenting it as settled.
 
+**Never give financial advice.** This is a documentary/analysis channel,
+not an advice channel — never write directive language like "you should
+buy/invest/sell," "guaranteed return," or "act now." Analyze what
+happened; never tell the viewer what to do with their own money. This is
+enforced automatically (`no_advice_language` check in
+`yt_engine/content/compliance.py`), but the script should never trigger it
+in the first place.
+
 **Structure:** cold open hook → setup → rising conflict → climax →
 resolution → closing thought. No dialogue, no "picture this," no filler.
 Written in complete sentences meant to be read aloud by a calm, confident

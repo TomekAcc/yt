@@ -67,6 +67,20 @@ def test_large_scene_count_with_natural_clustering_passes():
     assert "scene_variety" not in failed
 
 
+def test_advice_language_is_flagged():
+    script = _script(scene_lengths=(5, 12, 8, 20, 6))
+    script.scenes[2].narration = "Analysts warned investors. You should buy this stock immediately."
+    report = ComplianceReviewer().review(script, _brief())
+    failed = {c.name for c in report.checks if not c.passed}
+    assert "no_advice_language" in failed
+
+
+def test_analytical_language_is_not_flagged_as_advice():
+    report = ComplianceReviewer().review(_script(), _brief())
+    failed = {c.name for c in report.checks if not c.passed}
+    assert "no_advice_language" not in failed
+
+
 def test_format_rotation_flags_three_in_a_row():
     report = ComplianceReviewer().review(
         _script(),

@@ -128,3 +128,40 @@ def test_metadata_generator_forces_synthetic_media_disclosure():
     metadata = MetadataGenerator(llm).generate(script)
     assert metadata.contains_synthetic_media is True
     assert "Bank" in metadata.title
+
+
+def test_metadata_generator_captures_thumbnail_text():
+    from yt_engine.models import Scene, Script
+
+    script = Script(
+        title="The Fall of Barings Bank", sub_format=SubFormat.COMPANY_CASE_STUDY, thesis="t",
+        scenes=[Scene(index=0, narration="n", image_prompt="p")],
+        sources=[Source(title="s", url="https://example.com")],
+    )
+    llm = FakeLLMClient(
+        responses=[
+            {
+                "title": "The 233-Year-Old Bank Killed By One Trader",
+                "description": "A deep dive.",
+                "tags": ["finance"],
+                "thumbnail_text": "£827 MILLION GONE",
+            }
+        ]
+    )
+    metadata = MetadataGenerator(llm).generate(script)
+    assert metadata.thumbnail_text == "£827 MILLION GONE"
+
+
+def test_metadata_generator_defaults_thumbnail_text_when_missing():
+    from yt_engine.models import Scene, Script
+
+    script = Script(
+        title="The Fall of Barings Bank", sub_format=SubFormat.COMPANY_CASE_STUDY, thesis="t",
+        scenes=[Scene(index=0, narration="n", image_prompt="p")],
+        sources=[Source(title="s", url="https://example.com")],
+    )
+    llm = FakeLLMClient(
+        responses=[{"title": "t", "description": "d", "tags": []}]
+    )
+    metadata = MetadataGenerator(llm).generate(script)
+    assert metadata.thumbnail_text == ""
