@@ -8,11 +8,15 @@ concrete answer to YouTube's 2026 "inauthentic content" policy: it turns
 """
 from __future__ import annotations
 
+from collections import Counter
+
 from ..models import ComplianceCheck, ComplianceReport, ResearchBrief, Script
 
 MIN_SOURCES = 2
 MIN_KEY_FACTS = 5
 MIN_THESIS_WORDS = 8
+MIN_DISTINCT_SCENE_LENGTHS = 5
+MAX_DOMINANT_SCENE_LENGTH_SHARE = 0.5
 
 
 class ComplianceReviewer:
@@ -70,17 +74,32 @@ def _check_key_facts(research: ResearchBrief) -> ComplianceCheck:
 
 
 def _check_scene_variety(script: Script) -> ComplianceCheck:
-    """Flags scripts where every scene is (near-)identical length, a
-    fingerprint of templated, not-actually-written content."""
+    """Flags scripts where scene length is suspiciously uniform, a
+    fingerprint of templated, not-actually-written content.
+
+    Uses two scale-invariant signals instead of a count that scales with
+    the number of scenes (which over-penalizes long videos -- natural
+    writing paced to a consistent target duration legitimately clusters
+    around similar lengths even across 50+ scenes): at least a handful of
+    distinct lengths must appear, and no single length may dominate the
+    whole script.
+    """
     lengths = [len(s.narration.split()) for s in script.scenes]
     if len(lengths) < 2:
         return ComplianceCheck(name="scene_variety", passed=False, detail="fewer than 2 scenes")
     unique_lengths = len(set(lengths))
-    passed = unique_lengths >= max(2, len(lengths) // 4)
+    dominant_share = max(Counter(lengths).values()) / len(lengths)
+    passed = (
+        unique_lengths >= min(MIN_DISTINCT_SCENE_LENGTHS, len(lengths))
+        and dominant_share <= MAX_DOMINANT_SCENE_LENGTH_SHARE
+    )
     return ComplianceCheck(
         name="scene_variety",
         passed=passed,
-        detail=f"{unique_lengths} distinct scene lengths across {len(lengths)} scenes",
+        detail=(
+            f"{unique_lengths} distinct scene lengths across {len(lengths)} scenes, "
+            f"most common length covers {dominant_share:.0%} of scenes"
+        ),
     )
 
 

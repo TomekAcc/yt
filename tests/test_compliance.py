@@ -54,6 +54,19 @@ def test_identical_scene_lengths_fail_variety_check():
     assert "scene_variety" in failed
 
 
+def test_large_scene_count_with_natural_clustering_passes():
+    """Regression test: a long, well-paced script naturally clusters scene
+    lengths around a target duration -- that used to fail the old
+    count-scaled threshold even though it isn't templated content."""
+    import random
+
+    rng = random.Random(0)
+    scene_lengths = [rng.choice([18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]) for _ in range(70)]
+    report = ComplianceReviewer().review(_script(scene_lengths=scene_lengths), _brief())
+    failed = {c.name for c in report.checks if not c.passed}
+    assert "scene_variety" not in failed
+
+
 def test_format_rotation_flags_three_in_a_row():
     report = ComplianceReviewer().review(
         _script(),
