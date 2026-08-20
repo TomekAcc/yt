@@ -21,11 +21,14 @@ providers:
   image_model: "gemini-3.1-flash-image"
   # tts: one of "elevenlabs" | "gemini" | "openai" -- elevenlabs gives the
   # richest voice quality and native word-timestamps (best subtitle sync)
-  # but its free tier forbids commercial/monetized use; gemini reuses the
-  # same GEMINI_API_KEY as above with no such restriction.
-  tts: "gemini"
-  tts_voice: "narrator"
-  tts_model: "gemini-3.1-flash-tts-preview"
+  # but requires a paid plan for commercial/monetized use; gemini reuses
+  # the same GEMINI_API_KEY as above with no such restriction.
+  tts: "elevenlabs"
+  # tts_voice: "narrator" (Rachel, calm female) | "narrator_deep" (Adam,
+  # deep resonant male) | any raw ElevenLabs voice ID from your own
+  # Voice Library at elevenlabs.io/app/voice-library.
+  tts_voice: "narrator_deep"
+  tts_model: "gemini-3.1-flash-tts-preview" # only used if tts: gemini
 
 video:
   target_minutes: [10.0, 18.0]

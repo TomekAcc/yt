@@ -12,9 +12,12 @@ from .base import TTSProvider, TTSResult
 
 _ENDPOINT = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/with-timestamps"
 
-# Curated narrator voices; override via config/settings.yaml providers.tts_voice.
+# Curated narrator voices; override via config/settings.yaml providers.tts_voice
+# -- any value not listed here is passed straight through as a raw ElevenLabs
+# voice ID, so you can pick anything from your own Voice Library too.
 _VOICE_IDS = {
-    "narrator": "21m00Tcm4TlvDq8ikWAM",  # "Rachel" - calm, neutral documentary read
+    "narrator": "21m00Tcm4TlvDq8ikWAM",  # "Rachel" - calm, neutral female documentary read
+    "narrator_deep": "pNInz6obpgDQGcFmaJgB",  # "Adam" - deep, resonant male documentary read
 }
 
 
