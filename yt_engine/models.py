@@ -152,6 +152,7 @@ class YouTubeMetadata(BaseModel):
     title: str
     description: str
     tags: list[str]
+    thumbnail_text: str = ""  # short, punchy overlay text -- distinct from the full title
     category_id: str = "27"  # Education
     privacy_status: str = "private"
     contains_synthetic_media: bool = True

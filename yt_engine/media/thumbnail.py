@@ -21,32 +21,60 @@ def build_thumbnail(
     *,
     font_path: str | None = None,
 ) -> Path:
+    """Text is meant to be short and punchy (2-5 words -- see
+    ``thumbnail_text`` in publish/metadata.py), not the full video title, so
+    it can be rendered large enough to actually read at feed-thumbnail size.
+    """
     img = Image.open(source_image_path).convert("RGB")
     img = _cover_resize(img, THUMBNAIL_SIZE)
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-    band_height = int(img.size[1] * 0.32)
+    band_height = int(img.size[1] * 0.34)
     draw.rectangle(
         [(0, img.size[1] - band_height), img.size],
-        fill=(0, 0, 0, 160),
+        fill=(0, 0, 0, 150),
     )
 
-    font = _load_font(font_path, size=72)
-    text = title_text.upper()
-    margin = 48
+    margin = 56
     max_width = img.size[0] - 2 * margin
-    lines = _wrap_to_width(draw, text, font, max_width)
-    y = img.size[1] - band_height + 24
-    for line in lines:
-        draw.text((margin, y), line, font=font, fill=(255, 255, 255, 255))
-        bbox = draw.textbbox((margin, y), line, font=font)
-        y = bbox[3] + 8
+    max_height = band_height - 40
+    text = title_text.upper()
+    font, lines = _fit_text(draw, text, font_path, max_width, max_height)
+
+    line_heights = [draw.textbbox((0, 0), line, font=font)[3] for line in lines]
+    total_height = sum(line_heights) + 12 * (len(lines) - 1)
+    y = img.size[1] - band_height + (max_height - total_height) // 2 + 20
+
+    for line, line_height in zip(lines, line_heights):
+        line_width = draw.textbbox((0, 0), line, font=font)[2]
+        x = (img.size[0] - line_width) // 2
+        draw.text(
+            (x, y), line, font=font, fill=(255, 255, 255, 255),
+            stroke_width=max(3, font.size // 20), stroke_fill=(0, 0, 0, 255),
+        )
+        y += line_height + 12
 
     composed = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     composed.save(out_path, quality=92)
     return out_path
+
+
+def _fit_text(
+    draw: ImageDraw.ImageDraw, text: str, font_path: str | None, max_width: int, max_height: int
+) -> tuple[ImageFont.FreeTypeFont, list[str]]:
+    """Picks the largest font size (within a sane range) whose wrapped
+    lines still fit the available band -- short thumbnail text should
+    dominate the frame, not sit at a fixed small size."""
+    for size in range(140, 47, -8):
+        font = _load_font(font_path, size=size)
+        lines = _wrap_to_width(draw, text, font, max_width)
+        total_height = sum(draw.textbbox((0, 0), line, font=font)[3] for line in lines) + 12 * (len(lines) - 1)
+        if len(lines) <= 2 and total_height <= max_height:
+            return font, lines
+    font = _load_font(font_path, size=48)
+    return font, _wrap_to_width(draw, text, font, max_width)
 
 
 def _cover_resize(img: Image.Image, size: tuple[int, int]) -> Image.Image:

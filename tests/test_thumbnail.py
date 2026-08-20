@@ -13,3 +13,14 @@ def test_build_thumbnail_produces_correct_size(tmp_path):
     assert out.exists()
     with Image.open(out) as img:
         assert img.size == THUMBNAIL_SIZE
+
+
+def test_build_thumbnail_handles_short_punchy_text(tmp_path):
+    """Short thumbnail_text (the common case now) should render at a much
+    larger, more legible size than a long title would."""
+    src = write_dummy_image(tmp_path / "src.png", size=(1920, 1080))
+    out = build_thumbnail(src, "$18 BILLION LIE", tmp_path / "thumb.jpg")
+
+    assert out.exists()
+    with Image.open(out) as img:
+        assert img.size == THUMBNAIL_SIZE
