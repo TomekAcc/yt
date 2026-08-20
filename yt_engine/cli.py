@@ -102,7 +102,8 @@ def cmd_list(args, settings: Settings) -> None:
     for project_id in pipeline.store.list_projects():
         state = pipeline.store.load(project_id)
         title = state.topic.title if state.topic else "(no topic)"
-        print(f"{project_id}  [{state.stage.value:20s}]  {title}")
+        marker = "  [ERROR - run again to retry]" if state.error else ""
+        print(f"{project_id}  [{state.stage.value:20s}]  {title}{marker}")
 
 
 def build_parser() -> argparse.ArgumentParser:

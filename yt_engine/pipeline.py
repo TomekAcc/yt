@@ -97,10 +97,10 @@ class Pipeline:
         approval_callback: ApprovalCallback | None = None,
         upload: bool = True,
     ) -> ProjectState:
-        """Advances ``state`` stage by stage until it's DONE, FAILED, or
-        blocked waiting on the compliance approval gate."""
-        terminal = {Stage.DONE, Stage.FAILED}
-        while state.stage not in terminal:
+        """Advances ``state`` stage by stage until it's DONE, an exception
+        propagates (the failed stage stays put, ready to retry on the next
+        call), or it's blocked waiting on the compliance approval gate."""
+        while state.stage != Stage.DONE:
             if state.stage == Stage.UPLOAD and not upload:
                 log.info("Stopping before upload stage (upload=False) for %s", state.project_id)
                 break

@@ -18,8 +18,14 @@ def test_project_state_advance_and_fail():
     assert state.stage == Stage.SCRIPTING
 
     state.mark_failed("boom")
-    assert state.stage == Stage.FAILED
+    # stage deliberately stays put -- a failure must be retryable, not a
+    # dead end that silently no-ops on the next `run()` call
+    assert state.stage == Stage.SCRIPTING
     assert state.error == "boom"
+
+    state.advance()
+    assert state.stage == Stage.COMPLIANCE_REVIEW
+    assert state.error is None  # cleared once the retried stage succeeds
 
 
 def test_project_store_roundtrip(tmp_path):
