@@ -1,7 +1,30 @@
 from __future__ import annotations
 
-from yt_engine.media.subtitles import _format_timestamp, _group_into_cues, build_srt
+from dataclasses import dataclass
+
+from yt_engine.media import subtitles
+from yt_engine.media.subtitles import _format_timestamp, _group_into_cues, align_words_with_whisper, build_srt
 from yt_engine.models import Scene, WordTiming
+
+
+@dataclass
+class _FakeWhisperWord:
+    word: str
+    start: float
+    end: float
+
+
+class _FakeWhisperSegment:
+    def __init__(self, words):
+        self.words = words
+
+
+class _FakeWhisperModel:
+    def __init__(self, segments):
+        self._segments = segments
+
+    def transcribe(self, audio_path, word_timestamps=True):
+        return self._segments, None
 
 
 def _words(text: str, gap=0.05, word_dur=0.25, start=0.0):
@@ -45,3 +68,18 @@ def test_build_srt_uses_global_scene_offsets(tmp_path):
     goodbye_block_start = next(i for i, l in enumerate(lines) if "goodbye now" in l) - 1
     timestamp_line = lines[goodbye_block_start]
     assert timestamp_line.startswith("00:00:10")
+
+
+def test_align_words_with_whisper_drops_symbol_only_tokens(monkeypatch):
+    fake_words = [
+        _FakeWhisperWord(word=" Hello", start=0.0, end=0.3),
+        _FakeWhisperWord(word=" ♪", start=0.3, end=0.4),  # non-speech artifact
+        _FakeWhisperWord(word=" -", start=0.4, end=0.5),  # punctuation-only artifact
+        _FakeWhisperWord(word=" world.", start=0.5, end=0.8),
+    ]
+    fake_model = _FakeWhisperModel([_FakeWhisperSegment(fake_words)])
+    monkeypatch.setattr(subtitles, "_get_whisper_model", lambda: fake_model)
+
+    words = align_words_with_whisper("fake_audio.wav")
+
+    assert [w.word for w in words] == ["Hello", "world."]
